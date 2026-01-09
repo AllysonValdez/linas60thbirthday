@@ -26,7 +26,8 @@ import {
   Heart, 
   Lock, 
   Flower, 
-  Shirt
+  Shirt,
+  Phone
 } from 'lucide-react';
 
 // --- CUSTOMIZATION ---
@@ -239,10 +240,21 @@ export default function App() {
           </div>
 
           {/* Map Embed */}
-          <div className="w-full h-60 rounded-[2rem] overflow-hidden mb-12 border border-stone-100 shadow-inner">
+          <div className="w-full h-60 rounded-[2rem] overflow-hidden mb-8 border border-stone-100 shadow-inner">
             <iframe 
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.353683696874!2d121.16301399999999!3d14.5696198!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c7fb8fce5735%3A0xc84901512d88bd1e!2sThe%20Emerald%20Events%20Place!5e0!3m2!1sen!2sph!4v1736413432729!5m2!1sen!2sph" 
               width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" title="Venue Map"></iframe>
+          </div>
+
+          {/* For Inquiries Section (Moved Below the Map) */}
+          <div className="mb-12 border rounded-[2rem] p-6 text-center bg-[#fffcfd] border-rose-50">
+             <div className="flex flex-col items-center gap-2">
+                <div className="p-3 rounded-full bg-rose-50 text-rose-400 mb-1" style={{ backgroundColor: COLORS.women[0] + '20' }}>
+                   <Phone size={18} style={{ color: COLORS.women[1] }} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">For Inquiries</span>
+                <p className="text-sm font-bold text-stone-700 tracking-widest">09175061966</p>
+             </div>
           </div>
 
           {/* RSVP Form */}

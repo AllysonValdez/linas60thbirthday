@@ -26,8 +26,6 @@ import {
   Heart, 
   Lock, 
   Flower, 
-  Phone, 
-  Mail, 
   Shirt
 } from 'lucide-react';
 
@@ -62,7 +60,6 @@ const ADMIN_PASSWORD = "admin123";
 // --- Animation Component ---
 const FloatingFlowers = () => {
   const flowerCount = 18;
-  // Use useMemo to prevent re-rendering positions on every state change
   const flowerStyles = useMemo(() => Array.from({ length: flowerCount }).map((_, i) => ({
     id: i,
     left: Math.random() * 100,
@@ -106,6 +103,16 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState("");
   const [dbError, setDbError] = useState(null);
 
+  // Favicon and Title Setup
+  useEffect(() => {
+    document.title = "Avelina's 60th Birthday";
+    const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+    link.type = 'image/svg+xml';
+    link.rel = 'icon';
+    link.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>`;
+    document.getElementsByTagName('head')[0].appendChild(link);
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -145,10 +152,7 @@ export default function App() {
     const formData = new FormData(e.target);
     const rsvpData = {
       name: formData.get('name'),
-      email: formData.get('email'),
-      contact: formData.get('contact'),
       attending: formData.get('attending') === 'yes',
-      dietary: formData.get('dietary'),
       timestamp: new Date()
     };
     try {
@@ -182,7 +186,6 @@ export default function App() {
       )}
 
       <div className="max-w-xl w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-stone-100 z-10">
-        {/* Video Header */}
         <div className="relative h-[600px] bg-stone-50 overflow-hidden flex items-center justify-center">
           <video 
             src={HEADER_VIDEO_URL} 
@@ -201,16 +204,15 @@ export default function App() {
         </div>
 
         <div className="p-8 md:p-12">
-          {/* Dress Code Section - Using the Color Guide */}
+          {/* Dress Code Section */}
           <div className="mb-12 border rounded-[2rem] p-8 text-center bg-[#fffcfd] border-rose-50 shadow-sm">
             <div className="flex items-center justify-center gap-2 mb-4 text-stone-400">
-              <Shirt size={20} />
+              <span style={{ color: COLORS.women[0] }}><Shirt size={20} /></span>
               <span className="text-[11px] font-black uppercase tracking-[0.3em]">Dress Code</span>
             </div>
             <h3 className="text-xl font-serif font-bold text-stone-800 mb-8 uppercase tracking-wider">Semi-formal Attire</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-              {/* Women's Section (New Pinks) */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                    <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: COLORS.women[0] }}></div>
@@ -222,7 +224,6 @@ export default function App() {
                   <li>Midi cocktail dress</li>
                 </ul>
               </div>
-              {/* Men's Section (New Blues) */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                    <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: COLORS.men[0] }}></div>
@@ -272,21 +273,10 @@ export default function App() {
                   <div className="h-px bg-rose-50 flex-1"></div>
                </div>
 
-              <form onSubmit={handleRSVPSubmit} className="space-y-6">
+              <form onSubmit={handleRSVPSubmit} className="space-y-8">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1">Guest Name</label>
-                  <input required name="name" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none focus:ring-2 transition-all text-sm shadow-sm" placeholder="Full Name" style={{ '--tw-ring-color': COLORS.women[0] }} />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1 flex items-center gap-1"><Mail size={12}/> Email</label>
-                    <input required name="email" type="email" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none focus:ring-2 transition-all text-sm shadow-sm" placeholder="email@example.com" style={{ '--tw-ring-color': COLORS.women[0] }} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1 flex items-center gap-1"><Phone size={12}/> Contact</label>
-                    <input required name="contact" type="tel" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none focus:ring-2 transition-all text-sm shadow-sm" placeholder="09XX-XXX-XXXX" style={{ '--tw-ring-color': COLORS.women[0] }} />
-                  </div>
+                  <input required name="name" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none focus:ring-2 transition-all text-sm shadow-sm" placeholder="Enter Full Name" style={{ '--tw-ring-color': COLORS.women[0] }} />
                 </div>
 
                 <div className="space-y-2">
@@ -301,11 +291,6 @@ export default function App() {
                       <span className="text-[11px] font-black uppercase tracking-widest text-stone-600">Decline</span>
                     </label>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1">Notes</label>
-                  <textarea name="dietary" rows="3" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none text-sm resize-none shadow-sm" placeholder="Allergies or song requests?"></textarea>
                 </div>
 
                 <button type="submit" disabled={formStatus === 'submitting'} className="w-full text-white py-6 rounded-2xl font-bold tracking-[0.3em] uppercase disabled:opacity-50 transition-all text-xs shadow-xl active:scale-[0.98]" style={{ backgroundColor: COLORS.women[1] }}>
@@ -331,8 +316,8 @@ export default function App() {
           <div className="flex justify-between items-center mb-10">
             <button onClick={() => setView('invite')} className="flex items-center gap-2 text-stone-400 text-[10px] font-bold uppercase hover:text-stone-800 transition-colors"><ArrowLeft size={14} /> Back</button>
             <button onClick={() => {
-              const headers = ["Name", "Email", "Contact", "Attending", "Notes", "Date"];
-              const rows = responses.map(r => [`"${r.name}"`, `"${r.email}"`, `"${r.contact}"`, r.attending ? "Yes" : "No", `"${r.dietary || ''}"`, `"${r.timestamp}"`]);
+              const headers = ["Name", "Attending", "Date"];
+              const rows = responses.map(r => [`"${r.name}"`, r.attending ? "Yes" : "No", `"${r.timestamp}"`]);
               const csv = [headers, ...rows].map(e => e.join(",")).join("\n");
               const blob = new Blob([csv], { type: 'text/csv' });
               const url = URL.createObjectURL(blob);
@@ -353,22 +338,18 @@ export default function App() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#fffcfd] border-b border-rose-50 text-stone-400 uppercase text-[9px] font-bold tracking-widest">
-                  <tr><th className="px-8 py-6">Guest</th><th className="px-8 py-6">Status</th><th className="px-8 py-6">Contact</th><th className="px-8 py-6">Notes</th></tr>
+                  <tr><th className="px-8 py-6">Guest Name</th><th className="px-8 py-6">Status</th><th className="px-8 py-6">Time Received</th></tr>
                 </thead>
                 <tbody className="divide-y divide-rose-50 text-stone-700">
                   {responses.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map((resp) => (
                     <tr key={resp.id} className="hover:bg-rose-50/30 transition-colors">
-                      <td className="px-8 py-6">
-                        <div className="font-bold text-stone-800">{resp.name}</div>
-                        <div className="text-[9px] text-stone-400">{resp.email}</div>
-                      </td>
+                      <td className="px-8 py-6 font-bold text-stone-900">{resp.name}</td>
                       <td className="px-8 py-6">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest ${resp.attending ? 'text-white' : 'bg-stone-100 text-stone-500'}`} style={resp.attending ? { backgroundColor: COLORS.women[1] } : {}}>
                           {resp.attending ? 'ACCEPT' : 'DECLINE'}
                         </span>
                       </td>
-                      <td className="px-8 py-6 font-mono text-[10px]">{resp.contact}</td>
-                      <td className="px-8 py-6 italic truncate max-w-xs">{resp.dietary || '-'}</td>
+                      <td className="px-8 py-6 text-[10px] text-stone-400">{resp.timestamp}</td>
                     </tr>
                   ))}
                 </tbody>

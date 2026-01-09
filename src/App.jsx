@@ -5,7 +5,9 @@ import {
   collection, 
   addDoc,
   onSnapshot, 
-  query 
+  query,
+  doc,
+  deleteDoc
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -27,7 +29,9 @@ import {
   Lock, 
   Flower, 
   Shirt,
-  Phone
+  Phone,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 // --- CUSTOMIZATION ---
@@ -103,6 +107,7 @@ export default function App() {
   const [adminAuth, setAdminAuth] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [dbError, setDbError] = useState(null);
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
 
   // Favicon and Title Setup
   useEffect(() => {
@@ -161,6 +166,26 @@ export default function App() {
       setFormStatus('success');
     } catch (err) {
       setFormStatus('error');
+    }
+  };
+
+  const handleDeleteResponse = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rsvps', id));
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      const deletePromises = responses.map(r => 
+        deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rsvps', r.id))
+      );
+      await Promise.all(deletePromises);
+      setIsConfirmingClear(false);
+    } catch (err) {
+      console.error("Clear all error:", err);
     }
   };
 
@@ -246,7 +271,7 @@ export default function App() {
               width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" title="Venue Map"></iframe>
           </div>
 
-          {/* For Inquiries Section (Moved Below the Map) */}
+          {/* For Inquiries Section */}
           <div className="mb-12 border rounded-[2rem] p-6 text-center bg-[#fffcfd] border-rose-50">
              <div className="flex flex-col items-center gap-2">
                 <div className="p-3 rounded-full bg-rose-50 text-rose-400 mb-1" style={{ backgroundColor: COLORS.women[0] + '20' }}>
@@ -325,17 +350,31 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#fffcfd] p-4 md:p-8 font-sans">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
             <button onClick={() => setView('invite')} className="flex items-center gap-2 text-stone-400 text-[10px] font-bold uppercase hover:text-stone-800 transition-colors"><ArrowLeft size={14} /> Back</button>
-            <button onClick={() => {
-              const headers = ["Name", "Attending", "Date"];
-              const rows = responses.map(r => [`"${r.name}"`, r.attending ? "Yes" : "No", `"${r.timestamp}"`]);
-              const csv = [headers, ...rows].map(e => e.join(",")).join("\n");
-              const blob = new Blob([csv], { type: 'text/csv' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a'); a.href = url; a.download = 'avelina_60th_rsvps.csv'; a.click();
-            }} className="bg-stone-800 text-white px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center gap-2"><Download size={14} /> Export CSV</button>
+            
+            <div className="flex gap-2 w-full md:w-auto">
+              {isConfirmingClear ? (
+                <div className="flex gap-2 animate-in slide-in-from-right-4">
+                  <button onClick={handleClearAll} className="bg-red-600 text-white px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center gap-2 hover:bg-red-700">Confirm Delete All</button>
+                  <button onClick={() => setIsConfirmingClear(false)} className="bg-stone-200 text-stone-600 px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest">Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setIsConfirmingClear(true)} className="bg-rose-100 text-rose-600 px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-rose-200 transition-colors flex items-center gap-2">
+                   <AlertTriangle size={14} /> Clear All
+                </button>
+              )}
+              <button onClick={() => {
+                const headers = ["Name", "Attending", "Date"];
+                const rows = responses.map(r => [`"${r.name}"`, r.attending ? "Yes" : "No", `"${r.timestamp}"`]);
+                const csv = [headers, ...rows].map(e => e.join(",")).join("\n");
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'avelina_60th_rsvps.csv'; a.click();
+              }} className="bg-stone-800 text-white px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center gap-2"><Download size={14} /> Export CSV</button>
+            </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 text-center">
             <div className="bg-white p-10 rounded-[2.5rem] border border-rose-50 shadow-sm">
               <p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Accepts</p>
@@ -346,11 +385,17 @@ export default function App() {
               <p className="text-4xl font-black text-stone-300">{responses.filter(r => !r.attending).length}</p>
             </div>
           </div>
+
           <div className="bg-white rounded-[2.5rem] shadow-xl border border-rose-50 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#fffcfd] border-b border-rose-50 text-stone-400 uppercase text-[9px] font-bold tracking-widest">
-                  <tr><th className="px-8 py-6">Guest Name</th><th className="px-8 py-6">Status</th><th className="px-8 py-6">Time Received</th></tr>
+                  <tr>
+                    <th className="px-8 py-6">Guest Name</th>
+                    <th className="px-8 py-6">Status</th>
+                    <th className="px-8 py-6">Time Received</th>
+                    <th className="px-8 py-6 text-right">Action</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-rose-50 text-stone-700">
                   {responses.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map((resp) => (
@@ -362,6 +407,15 @@ export default function App() {
                         </span>
                       </td>
                       <td className="px-8 py-6 text-[10px] text-stone-400">{resp.timestamp}</td>
+                      <td className="px-8 py-6 text-right">
+                        <button 
+                          onClick={() => handleDeleteResponse(resp.id)}
+                          className="p-2 text-stone-300 hover:text-red-500 transition-colors"
+                          title="Delete Response"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -385,7 +439,7 @@ export default function App() {
         <form onSubmit={(e) => { e.preventDefault(); if (passwordInput === ADMIN_PASSWORD) { setAdminAuth(true); setView('dashboard'); } else { alert("Incorrect password"); } }} className="space-y-6">
           <input type="password" autoFocus className="w-full px-8 py-5 bg-[#fffcfd] border border-stone-100 rounded-3xl outline-none text-sm placeholder:text-stone-300" placeholder="Enter password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} />
           <button className="w-full text-white py-6 rounded-3xl font-bold uppercase text-xs tracking-[0.3em] shadow-lg transition-all active:scale-95" style={{ backgroundColor: COLORS.women[1] }}>Access Results</button>
-          <button type="button" onClick={() => setView('invite')} className="text-stone-300 text-[10px] font-black hover:text-rose-300 mt-4 text-center block uppercase tracking-widest transition-colors w-full">Back to Invite</button>
+          <button type="button" onClick={() => setView('invite')} className="text-stone-300 text-[10px] font-black hover:text-rose-500 mt-4 text-center block uppercase tracking-widest transition-colors w-full">Back to Invite</button>
         </form>
       </div>
     </div>

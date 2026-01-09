@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, 
@@ -34,6 +34,14 @@ import {
 // --- CUSTOMIZATION ---
 const HEADER_VIDEO_URL = "White And Golden Floral Botanical Simple 60th Birthday Party Invitation.mp4"; 
 
+// Color Guide Integration
+const COLORS = {
+  men: ["#B6CDDB", "#99BFD6"],
+  women: ["#FBAFC2", "#FF8FAB"],
+  primary: "#FBAFC2",
+  accent: "#FF8FAB"
+};
+
 // --- Firebase Configuration ---
 const firebaseConfig = {
   apiKey: "AIzaSyDsKREE3DWSkQ1g2vcVrxEEMlCeep8YA8Q",
@@ -53,36 +61,36 @@ const ADMIN_PASSWORD = "admin123";
 
 // --- Animation Component ---
 const FloatingFlowers = () => {
-  const [flowers, setFlowers] = useState([]);
-  useEffect(() => {
-    const newFlowers = Array.from({ length: 15 }).map((_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 5,
-      duration: 10 + Math.random() * 10,
-      size: 15 + Math.random() * 25,
-      rotation: Math.random() * 360
-    }));
-    setFlowers(newFlowers);
-  }, []);
+  const flowerCount = 18;
+  // Use useMemo to prevent re-rendering positions on every state change
+  const flowerStyles = useMemo(() => Array.from({ length: flowerCount }).map((_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 10,
+    duration: 15 + Math.random() * 15,
+    size: 15 + Math.random() * 25,
+    rotation: Math.random() * 360,
+    color: i % 2 === 0 ? COLORS.women[0] : COLORS.women[1]
+  })), []);
+
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
       <style>{`
         @keyframes floatUp {
           0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
-          10% { opacity: 0.6; }
-          90% { opacity: 0.6; }
-          100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+          10% { opacity: 0.7; }
+          90% { opacity: 0.7; }
+          100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
         }
         .flower-particle {
           position: absolute;
-          bottom: -50px;
+          bottom: -100px;
           animation: floatUp linear infinite;
         }
       `}</style>
-      {flowers.map((f) => (
-        <div key={f.id} className="flower-particle text-rose-200" style={{ left: `${f.left}%`, animationDelay: `${f.delay}s`, animationDuration: `${f.duration}s` }}>
-          <Flower size={f.size} style={{ transform: `rotate(${f.rotation}deg)` }} className="fill-rose-100/50" />
+      {flowerStyles.map((f) => (
+        <div key={f.id} className="flower-particle" style={{ left: `${f.left}%`, animationDelay: `${f.delay}s`, animationDuration: `${f.duration}s`, color: f.color }}>
+          <Flower size={f.size} style={{ transform: `rotate(${f.rotation}deg)` }} className="fill-current opacity-40" />
         </div>
       ))}
     </div>
@@ -103,15 +111,11 @@ export default function App() {
       try {
         await signInAnonymously(auth);
       } catch (err) {
-        console.error("Auth error:", err);
-        setDbError("Auth failed. Ensure 'Anonymous' is enabled in Firebase.");
+        setDbError("Auth failed. Please check Firebase settings.");
       }
     };
     initAuth();
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (u) setDbError(null);
-    });
+    const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
 
@@ -129,8 +133,6 @@ export default function App() {
     }, (err) => {
       if (err.code === 'permission-denied') {
         setDbError("Permission Denied: Check Firestore Security Rules.");
-      } else {
-        setDbError(String(err.message || "An unknown database error occurred."));
       }
     });
     return () => unsubscribe();
@@ -169,19 +171,19 @@ export default function App() {
   };
 
   const InvitationView = () => (
-    <div className="min-h-screen bg-[#fff5f6] flex flex-col items-center py-12 px-4 font-sans text-stone-800 relative">
+    <div className="min-h-screen bg-[#fffcfd] flex flex-col items-center py-12 px-4 font-sans text-stone-800 relative overflow-x-hidden">
       <FloatingFlowers />
       
       {dbError && (
-        <div className="max-w-xl w-full mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl flex gap-3 text-rose-700 shadow-sm z-10">
+        <div className="max-w-xl w-full mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex gap-3 text-red-700 shadow-sm z-10">
           <ShieldAlert className="shrink-0" size={20} />
           <div className="text-xs font-bold">{String(dbError)}</div>
         </div>
       )}
 
-      <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-rose-100 z-10">
+      <div className="max-w-xl w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-stone-100 z-10">
         {/* Video Header */}
-        <div className="relative h-[580px] bg-[#fee2e2] overflow-hidden flex items-center justify-center">
+        <div className="relative h-[600px] bg-stone-50 overflow-hidden flex items-center justify-center">
           <video 
             src={HEADER_VIDEO_URL} 
             autoPlay 
@@ -191,35 +193,43 @@ export default function App() {
             className="absolute inset-0 w-full h-full object-cover"
           />
           {!HEADER_VIDEO_URL && (
-             <div className="absolute inset-0 bg-gradient-to-br from-[#fff1f2] to-[#fecdd3] flex flex-col items-center justify-center p-12 text-center">
-                <div className="border border-rose-200 p-8 rounded-full">
-                   <Heart size={48} className="text-rose-300 fill-rose-300 animate-pulse" />
-                </div>
-                <h1 className="mt-6 text-rose-900 text-3xl font-serif tracking-[0.2em] uppercase">Avelina’s 60th</h1>
+             <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center" style={{ backgroundColor: COLORS.women[0] }}>
+                <Heart size={48} style={{ color: 'white', fill: 'white' }} className="animate-pulse" />
+                <h1 className="mt-6 text-white text-3xl font-serif tracking-[0.2em] uppercase">Avelina’s 60th</h1>
              </div>
           )}
         </div>
 
         <div className="p-8 md:p-12">
-          {/* Dress Code Section */}
-          <div className="mb-12 bg-[#fffcfd] border border-rose-100 rounded-2xl p-6 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4 text-rose-400">
+          {/* Dress Code Section - Using the Color Guide */}
+          <div className="mb-12 border rounded-[2rem] p-8 text-center bg-[#fffcfd] border-rose-50 shadow-sm">
+            <div className="flex items-center justify-center gap-2 mb-4 text-stone-400">
               <Shirt size={20} />
               <span className="text-[11px] font-black uppercase tracking-[0.3em]">Dress Code</span>
             </div>
-            <h3 className="text-lg font-serif font-bold text-rose-900 mb-6">Semi-formal Attire</h3>
+            <h3 className="text-xl font-serif font-bold text-stone-800 mb-8 uppercase tracking-wider">Semi-formal Attire</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest border-b border-rose-100 pb-1 mb-3">Women</p>
-                <ul className="text-xs text-stone-600 space-y-1 list-disc list-inside">
+              {/* Women's Section (New Pinks) */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                   <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: COLORS.women[0] }}></div>
+                   <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: COLORS.women[1] }}></div>
+                   <p className="text-[11px] font-bold uppercase tracking-widest text-stone-700">Women</p>
+                </div>
+                <ul className="text-xs text-stone-500 space-y-2 list-disc list-inside">
                   <li>Knee-length, tea-length</li>
                   <li>Midi cocktail dress</li>
                 </ul>
               </div>
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest border-b border-rose-100 pb-1 mb-3">Men</p>
-                <ul className="text-xs text-stone-600 space-y-1 list-disc list-inside">
+              {/* Men's Section (New Blues) */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                   <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: COLORS.men[0] }}></div>
+                   <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: COLORS.men[1] }}></div>
+                   <p className="text-[11px] font-bold uppercase tracking-widest text-stone-700">Men</p>
+                </div>
+                <ul className="text-xs text-stone-500 space-y-2 list-disc list-inside">
                   <li>Short Sleeves Dress Shirt</li>
                   <li>Long Sleeves Dress Shirt</li>
                 </ul>
@@ -228,7 +238,7 @@ export default function App() {
           </div>
 
           {/* Map Embed */}
-          <div className="w-full h-56 bg-rose-50 rounded-2xl overflow-hidden mb-12 border border-rose-100 shadow-inner">
+          <div className="w-full h-60 rounded-[2rem] overflow-hidden mb-12 border border-stone-100 shadow-inner">
             <iframe 
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.353683696874!2d121.16301399999999!3d14.5696198!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c7fb8fce5735%3A0xc84901512d88bd1e!2sThe%20Emerald%20Events%20Place!5e0!3m2!1sen!2sph!4v1736413432729!5m2!1sen!2sph" 
               width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy" title="Venue Map"></iframe>
@@ -236,76 +246,77 @@ export default function App() {
 
           {/* RSVP Form */}
           {formStatus === 'success' ? (
-            <div className="bg-rose-50 border border-rose-100 rounded-3xl p-10 text-center animate-in zoom-in duration-300">
-              <CheckCircle className="mx-auto text-rose-400 mb-4" size={64} />
-              <h3 className="text-xl font-serif font-bold text-rose-800 uppercase tracking-widest">RSVP Received</h3>
-              <p className="text-rose-600 mt-2 text-sm font-medium">We look forward to celebrating with you!</p>
+            <div className="border rounded-[2rem] p-10 text-center animate-in zoom-in duration-300" style={{ backgroundColor: '#fff5f6', borderColor: COLORS.women[0] }}>
+              <CheckCircle className="mx-auto mb-4" size={64} style={{ color: COLORS.women[1] }} />
+              <h3 className="text-xl font-serif font-bold text-stone-800 uppercase tracking-widest">RSVP Received</h3>
+              <p className="text-stone-500 mt-2 text-sm">We look forward to celebrating with you!</p>
               
               <div className="mt-8 flex flex-col gap-4">
                 <a 
                   href={getCalendarUrl()} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="bg-rose-400 text-white py-4 rounded-2xl font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-rose-500 transition-all shadow-lg active:scale-95"
+                  className="text-white py-5 rounded-2xl font-bold uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-95"
+                  style={{ backgroundColor: COLORS.women[1] }}
                 >
                   <CalendarPlus size={16} /> Add to Calendar
                 </a>
-                <button onClick={() => setFormStatus('idle')} className="text-rose-400 font-bold text-[10px] uppercase tracking-widest hover:underline">New RSVP</button>
+                <button onClick={() => setFormStatus('idle')} className="font-bold text-[10px] uppercase tracking-widest hover:underline" style={{ color: COLORS.women[1] }}>New RSVP</button>
               </div>
             </div>
           ) : (
             <div className="space-y-10">
                <div className="flex items-center gap-6">
-                  <div className="h-px bg-rose-100 flex-1"></div>
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-300">RSVP Below</span>
-                  <div className="h-px bg-rose-100 flex-1"></div>
+                  <div className="h-px bg-rose-50 flex-1"></div>
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-200">RSVP Below</span>
+                  <div className="h-px bg-rose-50 flex-1"></div>
                </div>
 
               <form onSubmit={handleRSVPSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-rose-800 ml-1">Guest Name</label>
-                  <input required name="name" className="w-full px-6 py-4 bg-rose-50/50 border border-rose-100 rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 transition-all text-sm" placeholder="Full Name" />
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1">Guest Name</label>
+                  <input required name="name" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none focus:ring-2 transition-all text-sm shadow-sm" placeholder="Full Name" style={{ '--tw-ring-color': COLORS.women[0] }} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-rose-800 ml-1 flex items-center gap-1"><Mail size={12}/> Email</label>
-                    <input required name="email" type="email" className="w-full px-6 py-4 bg-rose-50/50 border border-rose-100 rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 transition-all text-sm" placeholder="email@example.com" />
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1 flex items-center gap-1"><Mail size={12}/> Email</label>
+                    <input required name="email" type="email" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none focus:ring-2 transition-all text-sm shadow-sm" placeholder="email@example.com" style={{ '--tw-ring-color': COLORS.women[0] }} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-rose-800 ml-1 flex items-center gap-1"><Phone size={12}/> Contact Number</label>
-                    <input required name="contact" type="tel" className="w-full px-6 py-4 bg-rose-50/50 border border-rose-100 rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 transition-all text-sm" placeholder="0912..." />
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1 flex items-center gap-1"><Phone size={12}/> Contact</label>
+                    <input required name="contact" type="tel" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none focus:ring-2 transition-all text-sm shadow-sm" placeholder="09XX-XXX-XXXX" style={{ '--tw-ring-color': COLORS.women[0] }} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-rose-800 ml-1">Response</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1">Response</label>
                   <div className="flex gap-4">
-                    <label className="flex-1 flex items-center justify-center gap-2 p-5 border-2 border-rose-50 rounded-2xl cursor-pointer hover:border-rose-300 transition-all group">
-                      <input required type="radio" name="attending" value="yes" className="accent-rose-400 w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-rose-700">Accept</span>
+                    <label className="flex-1 flex items-center justify-center gap-2 p-6 border-2 border-rose-50 rounded-2xl cursor-pointer hover:border-rose-100 transition-all group">
+                      <input required type="radio" name="attending" value="yes" className="w-4 h-4" style={{ accentColor: COLORS.women[1] }} />
+                      <span className="text-[11px] font-black uppercase tracking-widest text-stone-600">Accept</span>
                     </label>
-                    <label className="flex-1 flex items-center justify-center gap-2 p-5 border-2 border-rose-50 rounded-2xl cursor-pointer hover:border-rose-300 transition-all group">
-                      <input required type="radio" name="attending" value="no" className="accent-rose-400 w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-rose-700">Decline</span>
+                    <label className="flex-1 flex items-center justify-center gap-2 p-6 border-2 border-rose-50 rounded-2xl cursor-pointer hover:border-rose-100 transition-all group">
+                      <input required type="radio" name="attending" value="no" className="w-4 h-4" style={{ accentColor: COLORS.men[1] }} />
+                      <span className="text-[11px] font-black uppercase tracking-widest text-stone-600">Decline</span>
                     </label>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-rose-800 ml-1">Notes</label>
-                  <textarea name="dietary" rows="3" className="w-full px-6 py-4 bg-rose-50/50 border border-rose-100 rounded-2xl outline-none text-sm resize-none" placeholder="Allergies or song requests?"></textarea>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-400 ml-1">Notes</label>
+                  <textarea name="dietary" rows="3" className="w-full px-6 py-5 bg-[#fffcfd] border border-stone-100 rounded-2xl outline-none text-sm resize-none shadow-sm" placeholder="Allergies or song requests?"></textarea>
                 </div>
 
-                <button type="submit" disabled={formStatus === 'submitting'} className="w-full bg-rose-400 text-white py-5 rounded-2xl font-bold tracking-[0.2em] uppercase hover:bg-rose-500 disabled:opacity-50 transition-all text-xs shadow-xl active:scale-[0.98]">
-                  {formStatus === 'submitting' ? 'Saving...' : 'Confirm Attendance'}
+                <button type="submit" disabled={formStatus === 'submitting'} className="w-full text-white py-6 rounded-2xl font-bold tracking-[0.3em] uppercase disabled:opacity-50 transition-all text-xs shadow-xl active:scale-[0.98]" style={{ backgroundColor: COLORS.women[1] }}>
+                  {formStatus === 'submitting' ? 'Processing...' : 'Confirm Attendance'}
                 </button>
               </form>
             </div>
           )}
         </div>
       </div>
-      <button onClick={() => setView('login')} className="mt-12 text-rose-300 hover:text-rose-500 flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors font-bold z-10">
+      <button onClick={() => setView('login')} className="mt-12 text-rose-200 hover:text-rose-400 flex items-center gap-1 text-[10px] uppercase tracking-widest transition-colors font-bold z-10">
         <Settings size={12} /> Admin
       </button>
     </div>
@@ -315,10 +326,10 @@ export default function App() {
     const totalAttending = responses.filter(r => r.attending).length;
 
     return (
-      <div className="min-h-screen bg-[#fff5f6] p-4 md:p-8 font-sans">
+      <div className="min-h-screen bg-[#fffcfd] p-4 md:p-8 font-sans">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-10">
-            <button onClick={() => setView('invite')} className="flex items-center gap-2 text-rose-400 text-[10px] font-bold uppercase hover:text-rose-800 transition-colors"><ArrowLeft size={14} /> Back</button>
+            <button onClick={() => setView('invite')} className="flex items-center gap-2 text-stone-400 text-[10px] font-bold uppercase hover:text-stone-800 transition-colors"><ArrowLeft size={14} /> Back</button>
             <button onClick={() => {
               const headers = ["Name", "Email", "Contact", "Attending", "Notes", "Date"];
               const rows = responses.map(r => [`"${r.name}"`, `"${r.email}"`, `"${r.contact}"`, r.attending ? "Yes" : "No", `"${r.dietary || ''}"`, `"${r.timestamp}"`]);
@@ -326,33 +337,33 @@ export default function App() {
               const blob = new Blob([csv], { type: 'text/csv' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a'); a.href = url; a.download = 'avelina_60th_rsvps.csv'; a.click();
-            }} className="bg-rose-800 text-white px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-rose-900 transition-all flex items-center gap-2"><Download size={14} /> Export CSV</button>
+            }} className="bg-stone-800 text-white px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center gap-2"><Download size={14} /> Export CSV</button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 text-center">
-            <div className="bg-white p-10 rounded-[2.5rem] border border-rose-100 shadow-sm">
-              <p className="text-rose-300 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Total Accepts</p>
-              <p className="text-4xl font-black text-rose-600">{totalAttending}</p>
+            <div className="bg-white p-10 rounded-[2.5rem] border border-rose-50 shadow-sm">
+              <p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Accepts</p>
+              <p className="text-4xl font-black" style={{ color: COLORS.women[1] }}>{totalAttending}</p>
             </div>
-            <div className="bg-white p-10 rounded-[2.5rem] border border-rose-100 shadow-sm">
-              <p className="text-rose-300 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Total Declines</p>
-              <p className="text-4xl font-black text-stone-400">{responses.filter(r => !r.attending).length}</p>
+            <div className="bg-white p-10 rounded-[2.5rem] border border-rose-50 shadow-sm">
+              <p className="text-stone-300 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Declines</p>
+              <p className="text-4xl font-black text-stone-300">{responses.filter(r => !r.attending).length}</p>
             </div>
           </div>
-          <div className="bg-white rounded-[2.5rem] shadow-xl border border-rose-100 overflow-hidden">
+          <div className="bg-white rounded-[2.5rem] shadow-xl border border-rose-50 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-rose-50/50 border-b border-rose-100 text-rose-800 uppercase text-[9px] font-bold tracking-widest">
-                  <tr><th className="px-8 py-6">Guest Info</th><th className="px-8 py-6">Status</th><th className="px-8 py-6">Contact</th><th className="px-8 py-6">Notes</th></tr>
+                <thead className="bg-[#fffcfd] border-b border-rose-50 text-stone-400 uppercase text-[9px] font-bold tracking-widest">
+                  <tr><th className="px-8 py-6">Guest</th><th className="px-8 py-6">Status</th><th className="px-8 py-6">Contact</th><th className="px-8 py-6">Notes</th></tr>
                 </thead>
                 <tbody className="divide-y divide-rose-50 text-stone-700">
                   {responses.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map((resp) => (
                     <tr key={resp.id} className="hover:bg-rose-50/30 transition-colors">
                       <td className="px-8 py-6">
-                        <div className="font-bold text-rose-900">{resp.name}</div>
+                        <div className="font-bold text-stone-800">{resp.name}</div>
                         <div className="text-[9px] text-stone-400">{resp.email}</div>
                       </td>
                       <td className="px-8 py-6">
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest ${resp.attending ? 'bg-rose-100 text-rose-700' : 'bg-stone-100 text-stone-500'}`}>
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest ${resp.attending ? 'text-white' : 'bg-stone-100 text-stone-500'}`} style={resp.attending ? { backgroundColor: COLORS.women[1] } : {}}>
                           {resp.attending ? 'ACCEPT' : 'DECLINE'}
                         </span>
                       </td>
@@ -370,18 +381,18 @@ export default function App() {
   };
 
   const AdminLogin = () => (
-    <div className="min-h-screen bg-rose-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-[3rem] p-12 shadow-2xl border border-rose-100">
+    <div className="min-h-screen bg-[#fffcfd] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-[3rem] p-12 shadow-2xl border border-rose-50">
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-rose-100 text-rose-400 rounded-3xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-rose-50 text-rose-300 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <Lock size={32} />
           </div>
-          <h2 className="text-2xl font-serif font-bold text-rose-900 tracking-tight uppercase">Admin Access</h2>
+          <h2 className="text-2xl font-serif font-bold text-stone-800 tracking-tight uppercase">Admin Access</h2>
         </div>
         <form onSubmit={(e) => { e.preventDefault(); if (passwordInput === ADMIN_PASSWORD) { setAdminAuth(true); setView('dashboard'); } else { alert("Incorrect password"); } }} className="space-y-6">
-          <input type="password" autoFocus className="w-full px-8 py-5 bg-rose-50/50 border border-rose-100 rounded-3xl outline-none text-sm placeholder:text-rose-200" placeholder="Enter password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} />
-          <button className="w-full bg-rose-800 text-white py-5 rounded-3xl font-bold uppercase text-xs tracking-[0.2em] shadow-lg hover:bg-rose-900 transition-all active:scale-95">Access Results</button>
-          <button type="button" onClick={() => setView('invite')} className="w-full text-rose-300 text-[10px] font-black hover:text-rose-500 mt-4 text-center block uppercase tracking-widest transition-colors">Return to Invitation</button>
+          <input type="password" autoFocus className="w-full px-8 py-5 bg-[#fffcfd] border border-stone-100 rounded-3xl outline-none text-sm placeholder:text-stone-300" placeholder="Enter password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} />
+          <button className="w-full text-white py-6 rounded-3xl font-bold uppercase text-xs tracking-[0.3em] shadow-lg transition-all active:scale-95" style={{ backgroundColor: COLORS.women[1] }}>Access Results</button>
+          <button type="button" onClick={() => setView('invite')} className="text-stone-300 text-[10px] font-black hover:text-rose-300 mt-4 text-center block uppercase tracking-widest transition-colors w-full">Back to Invite</button>
         </form>
       </div>
     </div>
